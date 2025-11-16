@@ -252,14 +252,6 @@ long inventory_size() {
     return count;
 }
 
-/* 
-============================
-====  FUNÇÕES DE FILAS  ====
-============================
--- São funções que fazem parte do ecossistema de uma fila encadeada
-*/
-
-
 
 
 /* 
