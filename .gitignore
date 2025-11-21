@@ -1,4 +1,5 @@
-output/
 tempCodeRunnerFile.c
-REMINDER.md
 main.exe
+.gitignore
+*.bin
+*.txt

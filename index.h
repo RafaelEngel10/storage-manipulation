@@ -26,6 +26,7 @@ typedef struct node {
 
 /* --- prototypes --- */
 void inventory_view();                                           //visualização do inventário
+void inventory_report();                                        //relatório em .txt
 void inventory_add(inventory *Inventario, unsigned int qtd);     //adiciona items no inventário
 inventory inventory_remove(inventory *Inventario);   //remove o primeiro item adicionado na fila
 long inventory_size();                                           //verifica quantos items há cadastrado no inventário
@@ -151,57 +152,65 @@ void inventory_add(inventory *Inventario, unsigned int qtd) {
 inventory inventory_remove(inventory *Inventario) {
     FILE *io_data = fopen("io_data.bin", "rb");
     if (!io_data) {
-        printf("Erro ao abrir...");
+        printf("Erro ao abrir arquivo!\n");
         return NULL;
     }
 
-    // --- LER TODOS OS REGISTROS ---
+
     inventory head = NULL;
     inventory *tail = &head;
 
-    while (!feof(io_data)) {
-        inventory node = malloc(sizeof(struct node));
 
-        node->item = read_string(io_data);
-        if (!node->item) {  // chegou ao fim
-            free(node);
-            break;
-        }
+    while (!feof(io_data)) {
+        int len;
+        if (fread(&len, sizeof(int), 1, io_data) != 1) break;
+        if (len <= 0) break;
+
+
+        inventory node = malloc(sizeof(struct node));
+        node->item = malloc(len);
+        fread(node->item, 1, len, io_data);
+
 
         fread(&node->value, sizeof(unsigned int), 1, io_data);
-        node->val_date = read_string(io_data);
-        node->next = NULL;
 
+
+        fread(&len, sizeof(int), 1, io_data);
+        node->val_date = malloc(len);
+        fread(node->val_date, 1, len, io_data);
+
+
+        node->next = NULL;
         *tail = node;
         tail = &node->next;
     }
 
+
     fclose(io_data);
 
+
     if (!head) {
-        printf("Nenhum registro para remover.\n");
+        printf("Inventario vazio. Nada a remover.\n");
         return NULL;
     }
 
-    // --- REMOVER O PRIMEIRO NÓ ---
+
     inventory removed = head;
     head = head->next;
 
-    // --- REGRAVAR O ARQUIVO SEM O REMOVIDO ---
-    FILE *output = fopen("io_data.bin", "wb");
 
-    inventory cur = head;
-    while (cur) {
-        write_string(output, cur->item);
-        fwrite(&cur->value, sizeof(unsigned int), 1, output);
-        write_string(output, cur->val_date);
-        cur = cur->next;
+    FILE *out = fopen("io_data.bin", "wb");
+    inventory current = head;
+    while (current) {
+        write_string(out, current->item);
+        fwrite(&current->value, sizeof(unsigned int), 1, out);
+        write_string(out, current->val_date);
+        current = current->next;
     }
+    fclose(out);
 
-    fclose(output);
 
-    // O retornado ainda contém item, value e val_date válidos
-    removed->next = NULL;
+    printf("Item removido com sucesso!\n");
     return removed;
 }
 
@@ -250,6 +259,65 @@ long inventory_size() {
 
     fclose(io_data);
     return count;
+}
+
+
+void inventory_report(FILE *fp) {
+    if (!fp) {
+        printf("Arquivo inexistente.\n");
+        return;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    long file_size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    if (file_size == 0) {
+        printf("Nenhum registro para relatorio.\n");
+        return;
+    }
+
+    FILE *rel = fopen("relatorio.txt", "w");
+    if (!rel) {
+        printf("Erro ao criar arquivo de relatorio.\n");
+        return;
+    }
+
+    fprintf(rel, "========== RELATORIO DE ITENS ==========\n\n");
+
+    while (ftell(fp) < file_size) {
+
+        /* ====== LER NOME ====== */
+        int len_item;
+        if (fread(&len_item, sizeof(int), 1, fp) != 1) break;
+
+        char *item = malloc(len_item);
+        fread(item, 1, len_item, fp);
+
+        /* ====== LER QUANTIDADE ====== */
+        unsigned int value;
+        fread(&value, sizeof(unsigned int), 1, fp);
+
+        /* ====== LER VALIDADE ====== */
+        int len_data;
+        fread(&len_data, sizeof(int), 1, fp);
+
+        char *val_date = malloc(len_data);
+        fread(val_date, 1, len_data, fp);
+
+        /* ====== ESCREVER NO RELATORIO ====== */
+        fprintf(rel, "Item: %s\n", item);
+        fprintf(rel, "Quantidade: %u\n", value);
+        fprintf(rel, "Validade: %s\n", val_date);
+        fprintf(rel, "------------------------------\n\n");
+
+        free(item);
+        free(val_date);
+    }
+
+    fclose(rel);
+
+    printf("Relatorio gerado em relatorio.txt\n");
 }
 
 

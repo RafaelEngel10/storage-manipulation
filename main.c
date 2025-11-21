@@ -27,8 +27,9 @@ int main() {
         printf("\n==============MENU===============\n");                    // menu de opções
         printf("1 - Visualizar Inventario\n");
         printf("2 - Adicionar Item ao Inventario\n");                   
-        printf("3 - Remover Item do Inventario\n");                     // --- NÃO ESTÁ FUNCIONANDO CORRETAMENTE AINDA!!! ---
+        printf("3 - Remover Item do Inventario\n");                     
         printf("4 - Verificar Tamanho do Banco\n");
+        printf("5 - Criar Registro\n");
         printf("0 - Sair\n");
         printf("=================================\n"); Sleep(250);
         printf("Digite aqui sua opcao: ");      
@@ -51,13 +52,17 @@ int main() {
             inventory_add(&Inventario, qtd);                            
             break;
         case 3:
-            printf("Removendo item da lista...\n"); Sleep(1000);
+            printf("Removendo item da lista...\n");     Sleep(1000);
             inventory_remove(Inventario);
             printf("Item removido com sucesso!\n");
             break;
         case 4:
-            printf("\nVerificando arquivo...\n"); Sleep(800);
+            printf("\nVerificando arquivo...\n");     Sleep(800);
             printf("Quantidade de items no estoque: \033[33m%ld\033[0m\n", inventory_size());       
+            break;
+        case 5:
+            printf("\nGerando arquivo de registro...\n");   Sleep(500);
+            inventory_report(io_data);
             break;
         default:
             break;
